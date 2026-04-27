@@ -387,7 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let userMarker = null;
 
     function initMap() {
-        if (map) return; // Already initialized
+        if (map) {
+            setTimeout(() => map.invalidateSize(), 100);
+            return; // Already initialized
+        }
 
         // Initialize map centered roughly (default)
         map = L.map('map').setView([34.0522, -118.2437], 13);
@@ -398,6 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
+
+        setTimeout(() => map.invalidateSize(), 100);
 
         // Try to get real location
         if (navigator.geolocation) {
@@ -426,17 +431,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('GPS Lock Acquired', 'fa-satellite', 'success');
                 },
                 (err) => {
-                    document.getElementById('live-coords').innerHTML = 'GPS Signal Lost';
-                    showToast('Could not acquire location', 'fa-triangle-exclamation', 'warning');
+                    document.getElementById('live-coords').innerHTML = 'GPS Signal Lost (Defaulting to LA)';
+                    showToast('Could not acquire location, using default.', 'fa-triangle-exclamation', 'warning');
                 },
-                { enableHighAccuracy: true, timeout: 10000 }
+                { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
             );
         }
     }
 
     // Initialize map when Location Share tab is clicked
     document.querySelector('.nav-item[data-target="location"]').addEventListener('click', () => {
-        setTimeout(initMap, 200); // Give CSS transition time to render before drawing map
+        setTimeout(initMap, 300); // Give CSS transition time to render before drawing map
     });
 
     // Initialize

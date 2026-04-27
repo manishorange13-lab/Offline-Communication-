@@ -29,25 +29,71 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => loginScreen.classList.add('active-auth'), 200);
     });
 
-    // Handle Login/Signup Submit
-    function authenticateAndEnterApp(e) {
-        e.preventDefault();
+    // Backend Integration
+    const API_URL = 'http://localhost:8000';
+    let socket = null;
+    let currentUser = null;
+
+    function initSocket() {
+        socket = io(API_URL);
+        socket.on('connect', () => console.log('Connected to server'));
+        socket.on('receive_message', (data) => {
+            appendMessage(data.text, data.network_type, data.sender, false);
+        });
+        socket.on('receive_sos', (data) => {
+            showToast(`EMERGENCY SOS from ${data.sender}!`, 'fa-radiation', 'error');
+            document.body.style.boxShadow = 'inset 0 0 100px rgba(239, 68, 68, 0.8)';
+            setTimeout(() => { document.body.style.boxShadow = 'none'; }, 2000);
+        });
+    }
+
+    function enterApp(deviceId) {
+        currentUser = deviceId;
+        document.getElementById('display-user-name').textContent = deviceId;
+        initSocket();
         
-        // Hide auth wrapper
         authWrapper.style.opacity = '0';
         setTimeout(() => {
             authWrapper.style.display = 'none';
-            // Show main app
             mainApp.style.display = 'flex';
             setTimeout(() => {
                 mainApp.style.opacity = '1';
-                showToast('Device Authenticated & Connected', 'fa-shield-halved', 'success');
+                showToast('Device Authenticated', 'fa-shield-halved', 'success');
             }, 50);
         }, 500);
     }
 
-    loginForm.addEventListener('submit', authenticateAndEnterApp);
-    signupForm.addEventListener('submit', authenticateAndEnterApp);
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const deviceId = loginForm.querySelector('input[type="text"]').value;
+        const passkey = loginForm.querySelector('input[type="password"]').value;
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId, passkey })
+            });
+            const data = await res.json();
+            if (res.ok) enterApp(deviceId);
+            else showToast(data.error, 'fa-circle-xmark', 'error');
+        } catch (err) { showToast('Server offline', 'fa-triangle-exclamation', 'error'); }
+    });
+
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const deviceId = signupForm.querySelector('input[type="text"]').value;
+        const passkey = signupForm.querySelector('input[type="password"]').value;
+        try {
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId, passkey })
+            });
+            const data = await res.json();
+            if (res.ok) enterApp(deviceId);
+            else showToast(data.error, 'fa-circle-xmark', 'error');
+        } catch (err) { showToast('Server offline', 'fa-triangle-exclamation', 'error'); }
+    });
 
     // Logout
     logoutBtn.addEventListener('click', () => {
@@ -259,30 +305,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Chat Logic
-    function sendMessage() {
-        const text = chatInput.value.trim();
-        if(!text) return;
-        
+    function appendMessage(text, network_type, senderName, isSent) {
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
         let metaHtml = '';
-        if(state.networkType === 'mesh') {
+        if(network_type === 'mesh') {
             metaHtml = `${timeStr} <i class="fa-solid fa-check-double text-green"></i> via Mesh`;
         } else {
             metaHtml = `${timeStr} <i class="fa-solid fa-satellite-dish text-purple"></i> via Satellite`;
         }
 
         const msgDiv = document.createElement('div');
-        msgDiv.className = 'message sent';
+        msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         msgDiv.innerHTML = `
+            ${!isSent ? `<small style="display:block; color:var(--color-brand); margin-bottom:5px; font-weight:bold;">${senderName}</small>` : ''}
             <p>${text}</p>
             <span class="meta">${metaHtml}</span>
         `;
         
         chatMessages.appendChild(msgDiv);
-        chatInput.value = '';
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = chatInput.value.trim();
+        if(!text) return;
+        
+        const network_type = state.networkType;
+        appendMessage(text, network_type, currentUser, true);
+        chatInput.value = '';
+        
+        if (socket) {
+            socket.emit('chat_message', {
+                sender: currentUser,
+                text: text,
+                network_type: network_type
+            });
+        }
     }
 
     sendMsgBtn.addEventListener('click', sendMessage);
@@ -304,6 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         showToast(`SOS Alert Broadcasted via ${routeMsg}!`, 'fa-triangle-exclamation', 'error');
         
+        if (socket) {
+            socket.emit('sos_alert', {
+                sender: currentUser,
+                route: mode
+            });
+        }
+
         // Add visual pulse effect
         document.body.style.boxShadow = 'inset 0 0 100px rgba(239, 68, 68, 0.5)';
         setTimeout(() => {
@@ -313,6 +380,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sendLocBtn.addEventListener('click', () => {
         showToast('Precise location sent securely.', 'fa-map-location-dot', 'success');
+    });
+
+    // Map Logic
+    let map = null;
+    let userMarker = null;
+
+    function initMap() {
+        if (map) return; // Already initialized
+
+        // Initialize map centered roughly (default)
+        map = L.map('map').setView([34.0522, -118.2437], 13);
+        
+        // Dark mode map tiles (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Try to get real location
+        if (navigator.geolocation) {
+            document.getElementById('live-coords').innerHTML = '<i class="fa-solid fa-satellite fa-spin"></i> Acquiring GPS...';
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    
+                    // Update map
+                    map.setView([lat, lon], 15);
+                    
+                    // Create a custom icon
+                    const customIcon = L.divIcon({
+                        className: 'custom-map-marker',
+                        html: '<i class="fa-solid fa-location-crosshairs fa-2x text-brand glow-icon"></i>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    userMarker = L.marker([lat, lon], {icon: customIcon}).addTo(map)
+                        .bindPopup('<b>You are here</b><br>Device Node')
+                        .openPopup();
+
+                    document.getElementById('live-coords').innerHTML = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+                    showToast('GPS Lock Acquired', 'fa-satellite', 'success');
+                },
+                (err) => {
+                    document.getElementById('live-coords').innerHTML = 'GPS Signal Lost';
+                    showToast('Could not acquire location', 'fa-triangle-exclamation', 'warning');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+    }
+
+    // Initialize map when Location Share tab is clicked
+    document.querySelector('.nav-item[data-target="location"]').addEventListener('click', () => {
+        setTimeout(initMap, 200); // Give CSS transition time to render before drawing map
     });
 
     // Initialize

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Connect - Hybrid Network</title>
+    <meta name="description" content="Offline Connect Dashboard showing Hybrid Network (Mesh + Satellite) capabilities.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Fascinating Animated Background -->
+    <div class="ambient-background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Auth Screens -->
+    <div class="auth-wrapper" id="auth-wrapper">
+        <!-- Login Screen -->
+        <div class="auth-container glass-card active-auth glow-card" id="login-screen">
+            <div class="auth-header">
+                <div class="brand-icon pulse-glow"><i class="fa-solid fa-wifi text-brand"></i></div>
+                <h2 class="gradient-text">Welcome Back</h2>
+                <p>Sign in to access the Offline Connect network.</p>
+            </div>
+            <form class="auth-form" id="login-form">
+                <div class="form-group">
+                    <label>Device ID / Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" placeholder="Enter your Device ID" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Passkey</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary full-width auth-btn">
+                    <span>Connect <i class="fa-solid fa-arrow-right-to-bracket"></i></span>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>New device? <a href="#" id="go-to-signup" class="text-brand hover-glow">Register Node</a></p>
+            </div>
+        </div>
+
+        <!-- Signup Screen -->
+        <div class="auth-container glass-card glow-card" id="signup-screen">
+            <div class="auth-header">
+                <div class="brand-icon mesh-glow"><i class="fa-solid fa-network-wired text-green"></i></div>
+                <h2 class="gradient-text-green">Register Node</h2>
+                <p>Join the hybrid mesh network.</p>
+            </div>
+            <form class="auth-form" id="signup-form">
+                <div class="form-group">
+                    <label>Node Designation (Name)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-id-badge"></i>
+                        <input type="text" placeholder="e.g., Device B" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Create Passkey</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key"></i>
+                        <input type="password" placeholder="Create secure passkey" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-green full-width auth-btn">
+                    <span>Initialize Node <i class="fa-solid fa-satellite-dish"></i></span>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Already registered? <a href="#" id="go-to-login" class="text-green hover-glow">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Application -->
+    <div class="app-container" id="main-app" style="display: none; opacity: 0;">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="brand">
+                <div class="brand-icon-small"><i class="fa-solid fa-wifi"></i></div>
+                <h2 class="gradient-text">Offline Connect</h2>
+            </div>
+            
+            <div class="global-status glass-panel" id="sidebar-status">
+                <div class="status-indicator mesh-active"></div>
+                <span>Mesh Network</span>
+            </div>
+
+            <ul class="nav-links">
+                <li class="nav-item active" data-target="home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-target="network">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <span>Network Manager</span>
+                </li>
+                <li class="nav-item" data-target="chat">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Secure Chat</span>
+                </li>
+                <li class="nav-item" data-target="location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Location Share</span>
+                </li>
+                <li class="nav-item sos-item" data-target="sos">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>SOS Emergency</span>
+                </li>
+            </ul>
+
+            <div class="nav-item logout-item" id="logout-btn" style="margin-top: 20px;">
+                <i class="fa-solid fa-power-off"></i>
+                <span>Disconnect</span>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Screen 1: Home Dashboard -->
+            <section id="home" class="screen active">
+                <header class="screen-header">
+                    <div>
+                        <h1 class="page-title">Overview</h1>
+                        <p class="subtitle text-gray mt-1">Live monitoring of your hybrid environment</p>
+                    </div>
+                    <div class="user-profile glass-panel"><i class="fa-solid fa-user-astronaut text-brand"></i> <span id="display-user-name">Device A</span></div>
+                </header>
+                
+                <div class="dashboard-grid">
+                    <!-- Global Network Card -->
+                    <div class="glass-card status-card hover-lift">
+                        <div class="card-glow-bg"></div>
+                        <h3 class="card-title"><i class="fa-solid fa-globe text-brand"></i> Network Status</h3>
+                        <div class="status-row mesh-status active-row" id="dash-mesh-status">
+                            <div class="icon-pulse mesh-pulse"><i class="fa-solid fa-circle-nodes"></i></div>
+                            <div class="status-info">
+                                <h4>Mesh Connected</h4>
+                                <p id="dash-mesh-desc">3 Nodes Nearby</p>
+                            </div>
+                            <div class="badge green-badge" id="dash-mesh-badge">Primary</div>
+                        </div>
+                        <div class="status-row sat-status standby-row" id="dash-sat-status">
+                            <div class="icon-pulse sat-pulse"><i class="fa-solid fa-satellite-dish"></i></div>
+                            <div class="status-info">
+                                <h4>Satellite</h4>
+                                <p id="dash-sat-desc">Standby Mode</p>
+                            </div>
+                            <div class="badge gray-badge" id="dash-sat-badge">Backup</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="glass-card actions-card hover-lift">
+                        <h3 class="card-title"><i class="fa-solid fa-bolt text-transition"></i> Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary nav-trigger hover-glow-blue" data-target="network">
+                                <i class="fa-solid fa-microchip"></i> AI Routing
+                            </button>
+                            <button class="btn btn-secondary nav-trigger" data-target="chat">
+                                <i class="fa-solid fa-shield-halved"></i> Secure Chat
+                            </button>
+                            <button class="btn btn-secondary nav-trigger" data-target="location">
+                                <i class="fa-solid fa-radar"></i> Radar Map
+                            </button>
+                            <button class="btn btn-danger nav-trigger hover-glow-red" data-target="sos">
+                                <i class="fa-solid fa-triangle-exclamation"></i> ALERT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 2: Network Manager -->
+            <section id="network" class="screen">
+                <header class="screen-header">
+                    <div>
+                        <h1 class="page-title">Network Manager</h1>
+                        <p class="subtitle text-brand mt-1">Smart Hybrid Routing Active <i class="fa-solid fa-circle-check"></i></p>
+                    </div>
+                </header>
+
+                <div class="network-manager-container">
+                    <div class="smart-toggle-banner hover-lift">
+                        <div class="banner-bg-anim"></div>
+                        <div class="banner-text">
+                            <h4><i class="fa-solid fa-brain text-white"></i> AI Network Switching</h4>
+                            <p>System continuously monitors latency and intelligently routes traffic to Satellite if Mesh degrades.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-switch-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="networks-grid">
+                        <div class="glass-card network-detail-card mesh-detail active-detail hover-lift" id="mesh-detail-card">
+                            <div class="card-glow-bg mesh-glow-bg"></div>
+                            <div class="card-header">
+                                <h3><div class="icon-box green-box"><i class="fa-solid fa-circle-nodes"></i></div> Mesh Network</h3>
+                                <span class="status-text text-green" id="mesh-status-text">Connected</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="stat-row"><span>Active Nodes:</span> <strong id="mesh-device-count" class="text-white">3 Nearby</strong></div>
+                                <div class="stat-row"><span>Bandwidth:</span> <strong id="mesh-bw" class="text-green">Optimal</strong></div>
+                                <div class="stat-row">
+                                    <span>Signal Strength:</span> 
+                                    <div class="signal-bars" id="mesh-signal">
+                                        <div class="bar active"></div><div class="bar active"></div><div class="bar active"></div><div class="bar active"></div><div class="bar active float-anim"></div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline hover-glow-green mt-4" id="force-mesh-fail">
+                                    <i class="fa-solid fa-bolt"></i> Simulate Outage
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass-card network-detail-card sat-detail standby-detail hover-lift" id="sat-detail-card">
+                            <div class="card-glow-bg sat-glow-bg"></div>
+                            <div class="card-header">
+                                <h3><div class="icon-box purple-box"><i class="fa-solid fa-satellite-dish"></i></div> Satellite Link</h3>
+                                <span class="status-text text-gray" id="sat-status-text">Standby</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="stat-row"><span>Latency:</span> <strong class="text-transition">~600ms</strong></div>
+                                <div class="stat-row"><span>Priority:</span> <strong id="sat-usage" class="text-gray">Emergency Only</strong></div>
+                                <div class="stat-row">
+                                    <span>Uplink Signal:</span> 
+                                    <div class="signal-bars" id="sat-signal">
+                                        <div class="bar active"></div><div class="bar active"></div><div class="bar active"></div><div class="bar empty"></div><div class="bar empty"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 3: Chat -->
+            <section id="chat" class="screen">
+                <header class="screen-header">
+                    <div>
+                        <h1 class="page-title">Secure Comms</h1>
+                    </div>
+                    <div class="chat-contact glass-panel">
+                        <div class="avatar gradient-avatar">D</div>
+                        <span>Device D</span>
+                        <div class="online-dot"></div>
+                    </div>
+                </header>
+                
+                <div class="chat-container glass-card">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message received pop-in">
+                            <p>Hi, are you safe?</p>
+                            <span class="meta">10:42 AM <i class="fa-solid fa-check-double text-green"></i> via Mesh</span>
+                        </div>
+                        <div class="message sent pop-in" style="animation-delay: 0.2s;">
+                            <p>Network is down here! Sending coordinates now.</p>
+                            <span class="meta">10:45 AM <i class="fa-solid fa-satellite-dish text-purple"></i> via Satellite</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area glass-panel">
+                        <button class="icon-btn"><i class="fa-solid fa-paperclip"></i></button>
+                        <input type="text" id="chat-input" placeholder="Type an encrypted message...">
+                        <button class="icon-btn"><i class="fa-solid fa-microphone"></i></button>
+                        <button class="btn btn-primary send-btn glow-btn" id="send-msg-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 4: Location Share -->
+            <section id="location" class="screen">
+                <header class="screen-header">
+                    <h1 class="page-title">Tactical Radar</h1>
+                </header>
+                
+                <div class="location-container">
+                    <div class="glass-card map-placeholder radar-card">
+                        <div class="radar-sweep"></div>
+                        <div class="pulse-ring ring-1"></div>
+                        <div class="pulse-ring ring-2"></div>
+                        <div class="pulse-ring ring-3"></div>
+                        
+                        <div class="radar-content">
+                            <i class="fa-solid fa-location-crosshairs fa-3x text-brand glow-icon"></i>
+                            <p class="tracking-text">Tracking GPS Constellation...</p>
+                            <div class="coords glass-panel text-brand">34.0522° N, 118.2437° W</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card routing-options hover-lift">
+                        <h3 class="card-title"><i class="fa-solid fa-route text-brand"></i> Data Routing</h3>
+                        <div class="radio-group">
+                            <label class="radio-option glass-panel">
+                                <input type="radio" name="loc-route" value="auto" checked>
+                                <span class="custom-radio"></span>
+                                <div class="option-content">
+                                    <strong class="text-brand">AI Auto Routing</strong>
+                                    <span class="text-xs text-gray">Uses fastest available network</span>
+                                </div>
+                            </label>
+                            <label class="radio-option glass-panel">
+                                <input type="radio" name="loc-route" value="mesh">
+                                <span class="custom-radio"></span>
+                                <div class="option-content">
+                                    <strong class="text-green">Mesh Network</strong>
+                                </div>
+                            </label>
+                            <label class="radio-option glass-panel">
+                                <input type="radio" name="loc-route" value="sat">
+                                <span class="custom-radio"></span>
+                                <div class="option-content">
+                                    <strong class="text-purple">Satellite Uplink <i class="fa-solid fa-satellite"></i></strong>
+                                </div>
+                            </label>
+                        </div>
+                        <button class="btn btn-primary full-width mt-4 glow-btn" id="send-loc-btn">Transmit Location</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 5: SOS -->
+            <section id="sos" class="screen">
+                <header class="screen-header sos-header">
+                    <div class="warning-icon-large pulse-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h1 class="page-title text-emergency">EMERGENCY OVERRIDE</h1>
+                    <p class="text-gray">Triggering an SOS will override all network priorities and broadcast to all nearby nodes and satellites.</p>
+                </header>
+                
+                <div class="sos-container glass-card emergency-card">
+                    <div class="card-glow-bg red-glow-bg"></div>
+                    <h3 class="text-white">Broadcast Method</h3>
+                    <div class="radio-group sos-radio">
+                        <label class="radio-option active-option" id="sos-auto-label">
+                            <input type="radio" name="sos-route" value="auto" checked>
+                            <span class="custom-radio"></span>
+                            <div class="option-content">
+                                <strong class="text-white">Global Auto (Mesh → Satellite)</strong>
+                                <span class="text-xs">Guarantees delivery via secondary link if primary fails</span>
+                            </div>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sos-route" value="mesh">
+                            <span class="custom-radio"></span>
+                            <div class="option-content">
+                                <strong class="text-white">Local Mesh Only</strong>
+                            </div>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sos-route" value="sat">
+                            <span class="custom-radio"></span>
+                            <div class="option-content">
+                                <strong class="text-white">Direct Satellite Uplink</strong>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="attach-location">
+                        <label class="checkbox-container">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            <span class="text-white">Attach High-Precision GPS Coordinates</span>
+                        </label>
+                    </div>
+
+                    <button class="btn btn-danger giant-btn" id="send-sos-btn">
+                        <div class="btn-glare"></div>
+                        <div class="ring-1"></div>
+                        <div class="ring-2"></div>
+                        <div class="ring-3"></div>
+                        <span class="btn-text"><i class="fa-solid fa-radiation"></i> BROADCAST SOS</span>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
